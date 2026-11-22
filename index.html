@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Don Mariano - Pedí, Reservá y Delivery</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,Arial} body{margin:0;background:#0f0f0f;color:#fff;overflow-x:hidden}
+header{background:#111;padding:16px;text-align:center;position:sticky;top:0;z-index:10;width:100%}
+header h1{margin:0;font-size:28px} header h1 span{color:#25D366}
+header p{margin:4px 0 0;color:#bbb;font-size:13px}
+.banner{background:#25D366;color:#000;padding:12px 16px;text-align:center;font-weight:800;width:100%;box-sizing:border-box;margin:0;display:block}
+.topbar{display:flex;gap:8px;padding:12px}
+.topbar button{flex:1;padding:12px;border-radius:12px;border:0;font-weight:800;cursor:pointer;background:#222;color:#fff}
+.topbar .sel{background:#25D366;color:#000}
+.cat-title{padding:20px 12px 6px;font-size:20px;font-weight:900}
+.grid{padding:0 12px;display:grid;gap:12px}
+.card{background:#1c1c1c;border-radius:16px;overflow:hidden;display:flex;gap:12px;padding:12px}
+.card.promo{border:2px solid #25D366;background:#1a2a1a}
+.card img{width:90px;height:90px;object-fit:cover;border-radius:12px;flex-shrink:0}
+.card h3{margin:0;font-size:16px} .card p{margin:4px 0;color:#aaa;font-size:13px}
+.price{font-weight:800;font-size:16px;color:#25D366}
+.old{color:#888;text-decoration:line-through;font-size:13px;margin-left:6px}
+.add{background:#25D366;border:0;padding:8px 14px;border-radius:999px;font-weight:800;cursor:pointer;white-space:nowrap;align-self:center}
+.cart{position:fixed;bottom:0;left:0;right:0;background:#fff;color:#000;padding:12px;border-radius:20px 20px 0 0;z-index:20;width:100%;box-sizing:border-box}
+.btn-wsp{background:#25D366;color:#fff;border:0;width:100%;padding:14px;border-radius:12px;font-weight:900;font-size:16px;margin-top:8px;cursor:pointer}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;margin:6px 0;box-sizing:border-box}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);padding:16px;z-index:100;align-items:center;justify-content:center}
+.modal.abierto{display:flex}
+.modal>div{background:#fff;color:#000;border-radius:16px;padding:16px;width:100%;max-width:420px;margin:auto;box-sizing:border-box}
+</style>
+</head>
+<body>
+<header><h1>DON <span>MARIANO</span></h1><p>🍕 Lanús Este • Abierto hoy 11:30 - 23:30 • ★ 4.9</p></header>
+<div class="banner">🔥 HOY: 2x1 en Fugazzeta + Envío gratis desde $15.000</div>
+<div class="topbar">
+<button id="btnDelivery" class="sel" onclick="setModo('Delivery')">🛵 Delivery</button>
+<button id="btnRetiro" onclick="setModo('Retiro en local')">🏃 Retiro</button>
+<button onclick="abrirReserva()" style="background:#fff;color:#000">📅 Reservar</button>
+</div>
+<div id="todoMenu"></div>
+<div class="cart">
+<b id="cartTitle">🛒 Tu pedido: $0</b>
+<div id="cartItems" style="font-size:13px;color:#444"></div>
+<input id="nombre" placeholder="Tu nombre">
+<input id="direccion" placeholder="Dirección para delivery">
+<button class="btn-wsp" onclick="pedirWsp()">PEDIR POR WHATSAPP →</button>
+</div>
+<div class="modal" id="modalReserva"><div>
+<h3 style="margin:0">📅 Reservar Mesa</h3>
+<input id="rNombre" placeholder="Tu nombre">
+<input id="rFecha" type="date">
+<select id="rHora"><option>12:00</option><option>13:00</option><option>20:00</option><option>21:00</option><option>22:00</option></select>
+<select id="rPersonas"><option>2 personas</option><option>4 personas</option><option>6 personas</option><option>8 personas</option></select>
+<button class="btn-wsp" onclick="reservarWsp()">CONFIRMAR RESERVA POR WHATSAPP</button>
+<button onclick="cerrarReserva()" style="width:100%;padding:10px;border:0;background:#eee;border-radius:10px;margin-top:8px">Cerrar</button>
+</div></div>
+<script>
+const WHATSAPP = "5491100000000";
+let modo = "Delivery"; let cart = {};
+const items = [
+{id:1,cat:"Promos",nombre:"2x1 Fugazzeta 🔥",desc:"HOY: Llevás 2 Fugazzetas al precio de 1",precio:14500,old:29000,img:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300"},
+{id:2,cat:"Promos",nombre:"Combo Muzzarella + Coca",desc:"Pizza Muzzarella + Coca Cola 1.5L bien fría",precio:15500,old:16500,img:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300"},
+{id:3,cat:"Promos",nombre:"2x1 Coca Cola 1.5L",desc:"Llevás 2 Coca Cola 1.5L al precio de 1 y media",precio:6500,old:9000,img:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=300"},
+{id:4,cat:"Pizzas",nombre:"Muzzarella",desc:"Muzzarella, salsa de tomate, orégano",precio:12000,img:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300"},
+{id:5,cat:"Pizzas",nombre:"Fugazzeta",desc:"Cebolla, muzzarella, queso, oliva",precio:14500,img:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300"},
+{id:6,cat:"Pizzas",nombre:"Napolitana",desc:"Tomate, ajo, muzzarella",precio:13500,img:"https://images.unsplash.com/photo-1595855759920-86582396756a?w=300"},
+{id:7,cat:"Empanadas",nombre:"Carne (x3)",desc:"Carne cortada a cuchillo, huevo",precio:6000,img:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300"},
+{id:8,cat:"Empanadas",nombre:"Jamón y Queso (x3)",desc:"Jamón cocido, muzzarella",precio:6000,img:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300"},
+{id:9,cat:"Bebidas",nombre:"Coca Cola 1.5L",desc:"Bien fría",precio:4500,img:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=300"},
+{id:10,cat:"Bebidas",nombre:"Cerveza Quilmes 1L",desc:"Retornable",precio:5500,img:"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=300"},
+];
+const cats = ["Promos","Pizzas","Empanadas","Bebidas"];
+function setModo(m){modo=m; document.getElementById('btnDelivery').classList.toggle('sel',m=='Delivery'); document.getElementById('btnRetiro').classList.toggle('sel',m!='Delivery'); document.getElementById('direccion').style.display = m=='Delivery'?'block':'none'; render();}
+function render(){
+  let html = "";
+  cats.forEach(c=>{
+    let emoji = c=="Promos"?"🔥":c=="Pizzas"?"🍕":c=="Empanadas"?"🥟":"🥤";
+    html += `<div class="cat-title">${emoji} ${c.toUpperCase()}</div><div class="grid">`;
+    html += items.filter(i=>i.cat==c).map(i=>`
+    <div class="card ${c=='Promos'?'promo':''}">
+      <img src="${i.img}">
+      <div style="flex:1"><h3>${i.nombre}</h3><p>${i.desc}</p><div class="price">$${i.precio.toLocaleString('es-AR')}${i.old?`<span class="old">$${i.old.toLocaleString('es-AR')}</span>`:''}</div></div>
+      <button class="add" onclick="add(${i.id})">+ Agregar</button>
+    </div>`).join('');
+    html += `</div>`;
+  });
+  html += `<div style="height:130px"></div>`;
+  document.getElementById('todoMenu').innerHTML = html;
+  let total=0, txt="";
+  for(let id in cart){let it=items.find(x=>x.id==id); total+=it.precio*cart[id]; txt+=`${cart[id]}x ${it.nombre} - $${(it.precio*cart[id]).toLocaleString('es-AR')}<br>`;}
+  document.getElementById('cartTitle').innerText = `🛒 Tu pedido (${modo}): $${total.toLocaleString('es-AR')}`;
+  document.getElementById('cartItems').innerHTML = txt || "Todavía no agregaste nada";
+}
+function add(id){cart[id]=(cart[id]||0)+1; render();}
+function abrirReserva(){document.getElementById('modalReserva').classList.add('abierto')}
+function cerrarReserva(){document.getElementById('modalReserva').classList.remove('abierto')}
+function pedirWsp(){
+  let nombre=document.getElementById('nombre').value||"Cliente";
+  let dir=document.getElementById('direccion').value||"Retiro en local";
+  let msg=`Hola Don Mariano! Soy ${nombre}%0AQuiero pedir (${modo}):%0A`;
+  for(let id in cart){let it=items.find(x=>x.id==id); msg+=`- ${cart[id]}x ${it.nombre} $${it.precio}%0A`;}
+  let total=Object.keys(cart).reduce((s,id)=>s+items.find(x=>x.id==id).precio*cart[id],0);
+  msg+=`%0ATotal: $${total}%0ADirección: ${dir}`;
+  window.open(`https://wa.me/${WHATSAPP}?text=${msg}`,'_blank');
+}
+function reservarWsp(){
+  let msg=`Hola Don Mariano! Quiero reservar mesa%0ANombre: ${document.getElementById('rNombre').value}%0AFecha: ${document.getElementById('rFecha').value}%0AHora: ${document.getElementById('rHora').value}%0APersonas: ${document.getElementById('rPersonas').value}`;
+  window.open(`https://wa.me/${WHATSAPP}?text=${msg}`,'_blank');
+}
+render();
+</script>
+</body>
+</html>
