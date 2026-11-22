@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Don Mariano - Menu</title>
+<style>
+  *{box-sizing:border-box;font-family:Arial,sans-serif}
+  body{background:#f5ead6;margin:0;padding:16px;color:#3b2314}
+  .card{background:#fff8ec;border-radius:16px;padding:16px;max-width:480px;margin:auto}
+  h1{text-align:center;margin:0;font-size:28px}
+  p.sub{text-align:center;margin:4px 0 16px}
+  .plato{border:2px solid #e8d9bd;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;gap:12px;align-items:center;cursor:pointer}
+  .plato.seleccionado{border-color:#1da851;background:#eaffef}
+  .plato img{width:90px;height:90px;object-fit:cover;border-radius:10px}
+  .plato b{font-size:18px}
+  .precio{font-weight:bold;font-size:18px}
+  .qty{display:flex;gap:8px;align-items:center;margin-top:6px}
+  .qty button{width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background:white;font-size:18px}
+  .opciones{display:flex;gap:8px;margin:12px 0}
+  .opciones button{flex:1;padding:12px;border-radius:10px;border:2px solid #3b2314;background:white;font-weight:bold;cursor:pointer}
+  .opciones button.activo{background:#1da851;color:white;border-color:#1da851}
+  #reserva{display:none;background:#fff3d6;padding:12px;border-radius:10px;margin-bottom:12px}
+  #reserva input,#reserva select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc}
+  #delivery{display:none;background:#e6f7ff;padding:12px;border-radius:10px;margin-bottom:12px}
+  #delivery input{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc}
+  .resumen{background:#fff;padding:12px;border-radius:10px;border:1px solid #eee}
+  .total{display:flex;justify-content:space-between;font-size:20px;font-weight:bold;margin-top:8px}
+  .btn-pedir{width:100%;background:#1da851;color:white;border:none;padding:16px;border-radius:12px;font-size:18px;font-weight:bold;margin-top:12px;cursor:pointer}
+  .qr{text-align:center;margin-top:16px}
+  .qr-box{width:150px;height:150px;background:white;border:2px solid #000;margin:auto;display:flex;align-items:center;justify-content:center;font-size:12px;padding:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>DON MARIANO</h1>
+  <p class="sub">PIZZERIA - LANUS ESTE</p>
+  <div id="menu"><p>Cargando menu...</p></div>
+  <h3>Como queres pedir?</h3>
+  <div class="opciones">
+    <button onclick="elegirModo('reserva',this)">RESERVAR MESA</button>
+    <button onclick="elegirModo('delivery',this)" class="activo">DELIVERY</button>
+    <button onclick="elegirModo('retiro',this)">RETIRO</button>
+  </div>
+  <div id="reserva">
+    <b>Reservar mesa</b>
+    <input type="text" id="nombreReserva" placeholder="Tu nombre">
+    <select id="personas"><option>2 personas</option><option>3 personas</option><option>4 personas</option><option>6 personas</option></select>
+    <input type="date" id="fecha">
+    <input type="time" id="hora" value="20:00">
+  </div>
+  <div id="delivery" style="display:block">
+    <b>Delivery - Lanus Este</b>
+    <input type="text" id="direccion" placeholder="Tu direccion, ej: Av. 25 de Mayo 123">
+    <input type="text" id="nombreDelivery" placeholder="Tu nombre">
+  </div>
+  <div class="resumen">
+    <b>Resumen del pedido</b>
+    <div id="detalle">Todavia no elegiste nada</div>
+    <div class="total"><span>Total</span><span id="total">ARS 0</span></div>
+  </div>
+  <button class="btn-pedir" onclick="confirmar()">CONFIRMAR PEDIDO</button>
+  <p id="mensaje" style="text-align:center;font-weight:bold"></p>
+  <div class="qr">
+    <div class="qr-box">QR DE PRUEBA<br>Escanea para pedir<br>Don Mariano</div>
+    <p>Escanea para pedir - Codigo de prueba</p>
+  </div>
+</div>
+<script>
+var platos = [
+  {id:1, nombre:"Muzzarella", desc:"Mozzarella, salsa y oregano", precio:9500, foto:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300"},
+  {id:2, nombre:"Fugazzeta", desc:"Cebolla, mozzarella y oregano", precio:11000, foto:"https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=300"},
+  {id:3, nombre:"Napolitana", desc:"Tomate, ajo y albahaca", precio:10500, foto:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300"},
+  {id:4, nombre:"Calabresa", desc:"Calabresa, mozzarella y aji", precio:11500, foto:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=300"},
+  {id:5, nombre:"Empanadas x3", desc:"Carne cortada a cuchillo", precio:4500, foto:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300"}
+];
+var carrito = {};
+var modo = "delivery";
+function render(){
+  var cont = document.getElementById("menu");
+  cont.innerHTML = "";
+  for(var i=0;i<platos.length;i++){
+    var p = platos[i];
+    var cant = carrito[p.id] || 0;
+    var div = document.createElement("div");
+    div.className = "plato" + (cant>0 ? " seleccionado" : "");
+    div.innerHTML = '<img src="' + p.foto + '" onerror="this.style.display=' + String.fromCharCode(39) + 'none' + String.fromCharCode(39) + '"><div style="flex:1"><b>' + p.nombre + '</b><br><small>' + p.desc + '</small><div class="precio">ARS ' + p.precio + '</div><div class="qty"><button onclick="cambiar(' + p.id + ',-1,event)">-</button><span>' + cant + '</span><button onclick="cambiar(' + p.id + ',1,event)">+</button></div></div>';
+    (function(idActual, cantActual){
+      div.addEventListener("click", function(e){ if(cantActual===0) cambiar(idActual,1,e); });
+    })(p.id, cant);
+    cont.appendChild(div);
+  }
+  actualizarResumen();
+}
+function cambiar(id,delta,e){
+  if(e) e.stopPropagation();
+  carrito[id] = (carrito[id]||0) + delta;
+  if(carrito[id]<=0) delete carrito[id];
+  render();
+}
+function elegirModo(m,btn){
+  modo=m;
+  var botones = document.querySelectorAll(".opciones button");
+  for(var i=0;i<botones.length;i++){ botones[i].classList.remove("activo"); }
+  btn.classList.add("activo");
+  document.getElementById("reserva").style.display = m==="reserva" ? "block" : "none";
+  document.getElementById("delivery").style.display = m==="delivery" ? "block" : "none";
+}
+function actualizarResumen(){
+  var total=0, html="";
+  for(var id in carrito){
+    var p = null;
+    for(var i=0;i<platos.length;i++){ if(platos[i].id==id){ p=platos[i]; } }
+    var sub = p.precio * carrito[id];
+    total+=sub;
+    html+= carrito[id] + "x " + p.nombre + " - ARS " + sub + "<br>";
+  }
+  if(!html) html="Todavia no elegiste nada";
+  document.getElementById("detalle").innerHTML = html;
+  document.getElementById("total").innerText = "ARS " + total;
+}
+function confirmar(){
+  var total = document.getElementById("total").innerText;
+  if(total==="ARS 0"){ document.getElementById("mensaje").innerText="Elegi al menos un plato para probar"; return; }
+  var extra="";
+  if(modo==="reserva") extra = " - Reserva: " + (document.getElementById("nombreReserva").value || "Sin nombre") + " - " + document.getElementById("personas").value + " - " + document.getElementById("fecha").value + " " + document.getElementById("hora").value;
+  if(modo==="delivery") extra = " - Delivery a: " + (document.getElementById("direccion").value || "Sin direccion") + " - " + (document.getElementById("nombreDelivery").value || "Sin nombre");
+  if(modo==="retiro") extra = " - Retiro en local";
+  document.getElementById("mensaje").innerText = "Pedido de prueba OK - Modo: " + modo.toUpperCase() + " - Total: " + total + extra;
+  alert("Pedido de prueba confirmado: " + document.getElementById("detalle").innerText + " Total: " + total + extra);
+}
+document.addEventListener("DOMContentLoaded", render);
+</script>
+</body>
+</html>
