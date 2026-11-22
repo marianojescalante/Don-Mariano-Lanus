@@ -59,7 +59,7 @@
     <div id="detalle">Todavia no elegiste nada</div>
     <div class="total"><span>Total</span><span id="total">ARS 0</span></div>
   </div>
-  <button class="btn-pedir" onclick="confirmar()">CONFIRMAR PEDIDO</button>
+  <button id="btnConfirmar" class="btn-pedir" onclick="confirmar()">CONFIRMAR PEDIDO</button>
   <p id="mensaje" style="text-align:center;font-weight:bold"></p>
   <h2>Don-Mariano-Pizzeria-Lanus</h2>
 </div>
@@ -102,6 +102,10 @@ function elegirModo(m,btn){
   btn.classList.add("activo");
   document.getElementById("reserva").style.display = m==="reserva" ? "block" : "none";
   document.getElementById("delivery").style.display = m==="delivery" ? "block" : "none";
+  var btnConfirmar = document.getElementById("btnConfirmar");
+  if(m==="reserva") btnConfirmar.innerText = "CONFIRMAR RESERVA";
+  if(m==="delivery") btnConfirmar.innerText = "CONFIRMAR PEDIDO";
+  if(m==="retiro") btnConfirmar.innerText = "CONFIRMAR RETIRO";
 }
 function actualizarResumen(){
   var total=0, html="";
@@ -118,13 +122,21 @@ function actualizarResumen(){
 }
 function confirmar(){
   var total = document.getElementById("total").innerText;
+  if(modo==="reserva"){
+    var nombre = document.getElementById("nombreReserva").value;
+    var fecha = document.getElementById("fecha").value;
+    if(!nombre || !fecha){ document.getElementById("mensaje").innerText="Completá nombre y fecha para reservar"; return; }
+    var extra = " - Reserva: " + nombre + " - " + document.getElementById("personas").value + " - " + fecha + " " + document.getElementById("hora").value;
+    document.getElementById("mensaje").innerText = "Reserva OK - Modo: RESERVA - Total: " + total + extra;
+    alert("Reserva confirmada: " + extra + " Total pedido: " + total);
+    return;
+  }
   if(total==="ARS 0"){ document.getElementById("mensaje").innerText="Elegi al menos un plato para probar"; return; }
-  var extra="";
-  if(modo==="reserva") extra = " - Reserva: " + (document.getElementById("nombreReserva").value || "Sin nombre") + " - " + document.getElementById("personas").value + " - " + document.getElementById("fecha").value + " " + document.getElementById("hora").value;
-  if(modo==="delivery") extra = " - Delivery a: " + (document.getElementById("direccion").value || "Sin direccion") + " - " + (document.getElementById("nombreDelivery").value || "Sin nombre");
-  if(modo==="retiro") extra = " - Retiro en local";
-  document.getElementById("mensaje").innerText = "Pedido de prueba OK - Modo: " + modo.toUpperCase() + " - Total: " + total + extra;
-  alert("Pedido de prueba confirmado: " + document.getElementById("detalle").innerText + " Total: " + total + extra);
+  var extra2="";
+  if(modo==="delivery") extra2 = " - Delivery a: " + (document.getElementById("direccion").value || "Sin direccion") + " - " + (document.getElementById("nombreDelivery").value || "Sin nombre");
+  if(modo==="retiro") extra2 = " - Retiro en local";
+  document.getElementById("mensaje").innerText = "Pedido de prueba OK - Modo: " + modo.toUpperCase() + " - Total: " + total + extra2;
+  alert("Pedido de prueba confirmado: " + document.getElementById("detalle").innerText + " Total: " + total + extra2);
 }
 document.addEventListener("DOMContentLoaded", render);
 </script>
