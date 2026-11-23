@@ -94,7 +94,7 @@ header p{margin:4px 0 0;color:#bbb;font-size:13px}
 
 <div id="modal-delivery" class="modal hidden"><div class="modal-box"><h3>🛵 Delivery</h3><input id="d-nombre" placeholder="Tu nombre"><input id="d-direccion" placeholder="Tu dirección - Ej: Av. 25 de Mayo 125"><button class="btn-confirm" onclick="confirmar('Delivery')">✅ CONFIRMAR DELIVERY POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
 <div id="modal-retiro" class="modal hidden"><div class="modal-box"><h3>🏃 Retiro en local</h3><input id="r-nombre" placeholder="Tu nombre"><select id="r-hora"><option>Retiro en 20 min</option><option>Retiro en 40 min</option><option>Retiro en 1 hora</option></select><p style="font-size:13px;color:#666">📍 Retirás en Don Mariano, Lanús Este</p><button class="btn-confirm" onclick="confirmar('Retiro')">✅ CONFIRMAR RETIRO POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
-<div id="modal-reservar" class="modal hidden"><div class="modal-box"><h3>📅 Reservar Mesa</h3><input id="res-nombre" placeholder="Tu nombre"><input id="res-fecha" type="date"><select id="res-hora"><option>12:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option></select><select id="res-personas"><option>2 personas</option><option>4 personas</option><option>6 personas</option><option>8 personas</option></select><button class="btn-confirm" onclick="confirmar('Reservar')">✅ CONFIRMAR RESERVA POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
+<div id="modal-reservar" class="modal hidden"><div class="modal-box"><h3>📅 Reservar Mesa</h3><input id="res-nombre" placeholder="Tu nombre"><input id="res-fecha" type="date"><select id="res-hora"><option>12:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option></select><select id="res-personas"><option>2 personas</option><option>4 personas</option><option>6 personas</option><option>8 personas</option></select><p style="font-size:13px;color:#666">Si además querés pedir comida, agregala antes de reservar y te llega todo junto.</p><button class="btn-confirm" onclick="confirmar('Reservar')">✅ CONFIRMAR RESERVA POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
 
 <script>
 let cart=[]; let modo='Delivery'; let cantSuelta=3;
@@ -113,6 +113,8 @@ function addEmpanadas(cant){
   let nombre = cant + ' Empanadas';
   if(cant==6) nombre = 'Media Docena Empanadas (6)';
   if(cant==12) nombre = '1 Docena Empanadas (12)';
+  if(cant==24) nombre = '2 Docenas Empanadas (24)';
+  if(cant==36) nombre = '3 Docenas Empanadas (36)';
   cart.push({n:nombre,p:total}); update();
 }
 function cambiarSuelta(n){
@@ -129,19 +131,31 @@ function update(){
   document.getElementById('items').innerHTML=cart.map(i=>i.n+' - $'+i.p.toLocaleString('es-AR')).join('<br>')||'Todavía no agregaste nada';
 }
 function confirmar(m){
-  if(cart.length==0){alert('Agregá algo primero');return;}
+  // Reservar NO necesita tener comida agregada
+  if(m!='Reservar' && cart.length==0){alert('Agregá algo primero');return;}
   let nombre=document.getElementById('nombre').value;
   let total=cart.reduce((a,b)=>a+b.p,0);
-  let detalle=cart.map(i=>'- '+i.n+' $'+i.p).join('\n');
+  let detalle=cart.map(i=>'• '+i.n+' - $'+i.p.toLocaleString('es-AR')).join('\n');
   let extra='';
-  if(m=='Delivery'){ nombre=document.getElementById('d-nombre').value||nombre; extra='\nDirección: '+document.getElementById('d-direccion').value; }
-  if(m=='Retiro'){ nombre=document.getElementById('r-nombre').value||nombre; extra='\nRetiro: '+document.getElementById('r-hora').value+' - Retiro en local'; }
-  if(m=='Reservar'){ nombre=document.getElementById('res-nombre').value||nombre; extra='\nReserva: '+document.getElementById('res-fecha').value+' '+document.getElementById('res-hora').value+' '+document.getElementById('res-personas').value; }
+  if(m=='Delivery'){ nombre=document.getElementById('d-nombre').value||nombre; extra='\n\n📍 DIRECCION: '+document.getElementById('d-direccion').value; }
+  if(m=='Retiro'){ nombre=document.getElementById('r-nombre').value||nombre; extra='\n\n🏃 RETIRO: '+document.getElementById('r-hora').value+' - Retiro en local'; }
+  if(m=='Reservar'){
+    nombre=document.getElementById('res-nombre').value||nombre;
+    extra='\n\n📅 RESERVA: '+document.getElementById('res-fecha').value+' - '+document.getElementById('res-hora').value+' - '+document.getElementById('res-personas').value;
+    // Si no hay comida, solo manda la reserva
+    if(cart.length==0){
+      if(!nombre){alert('Poné tu nombre');return;}
+      let msgSolo='Hola Don Mariano! Soy '+nombre+'\n\nQuiero RESERVAR MESA:'+extra;
+      window.open('https://wa.me/5491134567890?text='+encodeURIComponent(msgSolo),'_blank');
+      return;
+    }
+  }
   if(!nombre){alert('Poné tu nombre');return;}
-  let msg='Hola Don Mariano! Soy '+nombre+'\nQuiero '+m+':\n'+detalle+'\nTotal: $'+total+extra;
+  let msg='Hola Don Mariano! Soy '+nombre+'\n\nQuiero '+m+':\n'+detalle+'\n\n💰 TOTAL: $'+total.toLocaleString('es-AR')+extra;
   window.open('https://wa.me/5491134567890?text='+encodeURIComponent(msg),'_blank');
 }
 function pedir(){
+  if(modo=='Reservar'){ abrirReservar(); return; }
   if(cart.length==0){alert('Agregá algo primero');return;}
   if(modo=='Delivery') abrirDelivery();
   if(modo=='Retiro') abrirRetiro();
