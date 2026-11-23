@@ -20,6 +20,11 @@ header p{margin:4px 0 0;color:#bbb;font-size:13px}
 .card b{font-size:15px} .card p{margin:4px 0;color:#aaa;font-size:12px}
 .price{color:#25D366;font-weight:800} .old{color:#888;text-decoration:line-through;font-size:12px}
 .add{margin-left:auto;background:#25D366;border:0;padding:8px 12px;border-radius:20px;font-weight:800;cursor:pointer;white-space:nowrap}
+.docena-box{background:#1a2a1f;border:1px solid #2a4a33;border-radius:14px;padding:14px}
+.docena-box p{margin:0 0 10px;color:#aaa;font-size:13px}
+.docena-grid{display:flex;flex-wrap:wrap;gap:8px}
+.btn-docena{flex:1;min-width:110px;padding:12px 8px;border-radius:12px;border:0;background:#ffcc00;font-weight:800;cursor:pointer;font-size:14px}
+.btn-docena small{display:block;font-weight:400;font-size:12px}
 .cart{position:fixed;bottom:0;left:0;right:0;background:#fff;color:#000;padding:12px;border-radius:16px 16px 0 0}
 .cart input{width:100%;padding:12px;margin:6px 0;border:1px solid #ddd;border-radius:10px}
 .btn-main{width:100%;padding:14px;border:0;border-radius:10px;background:#25D366;font-weight:800;font-size:16px;cursor:pointer;margin-top:6px}
@@ -46,6 +51,19 @@ header p{margin:4px 0 0;color:#bbb;font-size:13px}
 <div class="card"><img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200"><div><b>2x1 Coca Cola 1.5L</b><p>Llevás 2 Coca Cola 1.5L al precio de 1 y media</p><div><span class="price">$6.500</span> <span class="old">$9.000</span></div></div><button class="add" onclick="add('2x1 Coca Cola 1.5L',6500)">+ Agregar</button></div>
 </div>
 
+<div class="cat-title">🥟 EMPANADAS - DOCENAS</div>
+<div class="grid">
+<div class="docena-box">
+<p>Elegí cuántas querés, con 1 clic ya está en el pedido:</p>
+<div class="docena-grid">
+<button class="btn-docena" onclick="addEmpanadas(6)">Media Docena<small>6 empanadas - $15.000</small></button>
+<button class="btn-docena" onclick="addEmpanadas(12)">1 Docena<small>12 empanadas - $30.000</small></button>
+<button class="btn-docena" onclick="addEmpanadas(24)">2 Docenas<small>24 empanadas - $60.000</small></button>
+<button class="btn-docena" onclick="addEmpanadas(36)">3 Docenas<small>36 empanadas - $90.000</small></button>
+</div>
+</div>
+</div>
+
 <div class="cart">
 <b id="titulo-pedido">🛒 Tu pedido (Delivery): $0</b>
 <div id="items" style="font-size:13px;margin:8px 0;color:#333"></div>
@@ -55,7 +73,7 @@ header p{margin:4px 0 0;color:#bbb;font-size:13px}
 
 <!-- MODAL DELIVERY -->
 <div id="modal-delivery" class="modal hidden"><div class="modal-box"><h3>🛵 Delivery</h3><input id="d-nombre" placeholder="Tu nombre"><input id="d-direccion" placeholder="Tu dirección - Ej: Av. 25 de Mayo 125"><button class="btn-confirm" onclick="confirmar('Delivery')">✅ CONFIRMAR DELIVERY POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
-<!-- MODAL RETIRO - ESTE ES EL QUE FALTABA -->
+<!-- MODAL RETIRO -->
 <div id="modal-retiro" class="modal hidden"><div class="modal-box"><h3>🏃 Retiro en local</h3><input id="r-nombre" placeholder="Tu nombre"><select id="r-hora"><option>Retiro en 20 min</option><option>Retiro en 40 min</option><option>Retiro en 1 hora</option></select><p style="font-size:13px;color:#666">📍 Retirás en Don Mariano, Lanús Este</p><button class="btn-confirm" onclick="confirmar('Retiro')">✅ CONFIRMAR RETIRO POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
 <!-- MODAL RESERVAR -->
 <div id="modal-reservar" class="modal hidden"><div class="modal-box"><h3>📅 Reservar Mesa</h3><input id="res-nombre" placeholder="Tu nombre"><input id="res-fecha" type="date"><select id="res-hora"><option>12:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option></select><select id="res-personas"><option>2 personas</option><option>4 personas</option><option>6 personas</option><option>8 personas</option></select><button class="btn-confirm" onclick="confirmar('Reservar')">✅ CONFIRMAR RESERVA POR WHATSAPP</button><button class="btn-cerrar" onclick="cerrar()">Cerrar</button></div></div>
@@ -84,6 +102,15 @@ function abrirReservar(){
 }
 function cerrar(){ document.querySelectorAll('.modal').forEach(e=>e.classList.add('hidden')); }
 function add(n,p){cart.push({n,p});update();}
+function addEmpanadas(cant){
+  let precioUnitario = 2500;
+  let total = cant * precioUnitario;
+  let nombre = cant + ' Empanadas (' + (cant/12) + ' docena' + (cant>12?'s':'') + ')';
+  if(cant==6) nombre = 'Media Docena Empanadas (6)';
+  if(cant==12) nombre = '1 Docena Empanadas (12)';
+  cart.push({n:nombre,p:total});
+  update();
+}
 function update(){
   let total=cart.reduce((a,b)=>a+b.p,0);
   document.getElementById('titulo-pedido').innerText='🛒 Tu pedido ('+modo+'): $'+total.toLocaleString('es-AR');
